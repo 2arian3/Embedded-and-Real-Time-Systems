@@ -1,11 +1,6 @@
-#!/usr/bin/env python
-
-"""
-taskset.py - parser for task set from JSON file
-"""
-
 import json
 import sys
+import math
 
 
 class TaskSetJsonKeys(object):
@@ -31,63 +26,63 @@ class TaskSetJsonKeys(object):
 
 
 class TaskSetIterator:
-    def __init__(self, taskSet):
-        self.taskSet = taskSet
+    def __init__(self, task_set):
+        self.task_set = task_set
         self.index = 0
-        self.keys = iter(taskSet.tasks)
+        self.keys = iter(task_set.tasks)
 
     def __next__(self):
         key = next(self.keys)
-        return self.taskSet.tasks[key]
+        return self.task_set.tasks[key]
 
 
 class TaskSet(object):
     def __init__(self, data):
-        self.parseDataToTasks(data)
-        self.buildJobReleases(data)
+        self.parse_data_to_tasks(data)
+        self.build_job_releases(data)
 
-    def parseDataToTasks(self, data):
-        taskSet = {}
+    def parse_data_to_tasks(self, data):
+        task_set = {}
 
-        for taskData in data[TaskSetJsonKeys.KEY_TASKSET]:
-            task = Task(taskData)
+        for task_data in data[TaskSetJsonKeys.KEY_TASKSET]:
+            task = Task(task_data)
 
-            if task.id in taskSet:
+            if task.id in task_set:
                 print("Error: duplicate task ID: {0}".format(task.id))
                 return
 
-            if task.period < 0 and task.relativeDeadline < 0:
+            if task.period < 0 and task.relative_deadline < 0:
                 print("Error: aperiodic task must have positive relative deadline")
                 return
 
-            taskSet[task.id] = task
+            task_set[task.id] = task
 
-        self.tasks = taskSet
+        self.tasks = task_set
 
-    def buildJobReleases(self, data):
+    def build_job_releases(self, data):
         jobs = []
 
         if TaskSetJsonKeys.KEY_RELEASETIMES in data:  # necessary for sporadic releases
             for jobRelease in data[TaskSetJsonKeys.KEY_RELEASETIMES]:
-                releaseTime = float(jobRelease[TaskSetJsonKeys.KEY_RELEASETIMES_JOBRELEASE])
-                taskId = int(jobRelease[TaskSetJsonKeys.KEY_RELEASETIMES_TASKID])
+                release_time = float(jobRelease[TaskSetJsonKeys.KEY_RELEASETIMES_JOBRELEASE])
+                task_id = int(jobRelease[TaskSetJsonKeys.KEY_RELEASETIMES_TASKID])
 
-                job = self.getTaskById(taskId).spawnJob(releaseTime)
+                job = self.get_task_by_id(task_id).spawn_job(release_time)
                 jobs.append(job)
         else:
-            scheduleStartTime = float(data[TaskSetJsonKeys.KEY_SCHEDULE_START])
-            scheduleEndTime = float(data[TaskSetJsonKeys.KEY_SCHEDULE_END])
+            schedule_start_time = float(data[TaskSetJsonKeys.KEY_SCHEDULE_START])
+            schedule_end_time = float(data[TaskSetJsonKeys.KEY_SCHEDULE_END])
             for task in self:
-                t = max(task.offset, scheduleStartTime)
-                while t < scheduleEndTime:
-                    job = task.spawnJob(t)
+                t = max(task.offset, schedule_start_time)
+                while t < schedule_end_time:
+                    job = task.spawn_job(t)
                     if job is not None:
                         jobs.append(job)
 
                     if task.period >= 0:
                         t += task.period  # periodic
                     else:
-                        t = scheduleEndTime  # aperiodic
+                        t = schedule_end_time  # aperiodic
 
         self.jobs = jobs
 
@@ -100,120 +95,142 @@ class TaskSet(object):
     def __len__(self):
         return len(self.tasks)
 
-    def getTaskById(self, taskId):
-        return self.tasks[taskId]
+    def get_task_by_id(self, task_id):
+        return self.tasks[task_id]
 
-    def printTasks(self):
+    def print_tasks(self):
         print("\nTask Set:")
         for task in self:
             print(task)
 
-    def printJobs(self):
+    def print_jobs(self):
         print("\nJobs:")
         for task in self:
-            for job in task.getJobs():
+            for job in task.get_jobs():
                 print(job)
 
 
 class Task(object):
-    def __init__(self, taskDict):
-        self.id = int(taskDict[TaskSetJsonKeys.KEY_TASK_ID])
-        self.period = float(taskDict[TaskSetJsonKeys.KEY_TASK_PERIOD])
-        self.wcet = float(taskDict[TaskSetJsonKeys.KEY_TASK_WCET])
-        self.relativeDeadline = float(
-            taskDict.get(TaskSetJsonKeys.KEY_TASK_DEADLINE, taskDict[TaskSetJsonKeys.KEY_TASK_PERIOD]))
-        self.offset = float(taskDict.get(TaskSetJsonKeys.KEY_TASK_OFFSET, 0.0))
-        self.sections = taskDict[TaskSetJsonKeys.KEY_TASK_SECTIONS]
+    def __init__(self, task_dict):
+        self.id = int(task_dict[TaskSetJsonKeys.KEY_TASK_ID])
+        self.period = float(task_dict[TaskSetJsonKeys.KEY_TASK_PERIOD])
+        self.wcet = float(task_dict[TaskSetJsonKeys.KEY_TASK_WCET])
+        self.relative_deadline = float(
+            task_dict.get(TaskSetJsonKeys.KEY_TASK_DEADLINE, task_dict[TaskSetJsonKeys.KEY_TASK_PERIOD]))
+        self.offset = float(task_dict.get(TaskSetJsonKeys.KEY_TASK_OFFSET, 0.0))
+        self.sections = task_dict[TaskSetJsonKeys.KEY_TASK_SECTIONS]
 
-        self.lastJobId = 0
-        self.lastReleasedTime = 0.0
+        self.last_job_id = 0
+        self.last_released_time = 0.0
 
         self.jobs = []
 
-    def getAllResources(self):
+    def get_all_resources(self):
         result = []
         for section in self.sections:
             if section[0] not in result and section[0] != 0:
                 result.append(section[0])
         return result
 
-    def spawnJob(self, releaseTime):
-        if self.lastReleasedTime > 0 and releaseTime < self.lastReleasedTime:
+    def spawn_job(self, release_time):
+        if self.last_released_time > 0 and release_time < self.last_released_time:
             print("INVALID: release time of job is not monotonic")
             return None
 
-        if self.lastReleasedTime > 0 and releaseTime < self.lastReleasedTime + self.period:
-            print("INVDALID: release times are not separated by period")
+        if self.last_released_time > 0 and release_time < self.last_released_time + self.period:
+            print("INVALID: release times are not separated by period")
             return None
 
-        self.lastJobId += 1
-        self.lastReleasedTime = releaseTime
+        self.last_job_id += 1
+        self.last_released_time = release_time
 
-        job = Job(self, self.lastJobId, releaseTime)
+        job = Job(self, self.last_job_id, release_time)
 
         self.jobs.append(job)
         return job
 
-    def getJobs(self):
+    def get_jobs(self):
         return self.jobs
 
-    def getJobById(self, jobId):
-        if jobId > self.lastJobId:
+    def get_job_by_id(self, job_id):
+        if job_id > self.last_job_id:
             return None
 
-        job = self.jobs[jobId - 1]
-        if job.id == jobId:
+        job = self.jobs[job_id - 1]
+        if job.id == job_id:
             return job
 
         for job in self.jobs:
-            if job.id == jobId:
+            if job.id == job_id:
                 return job
 
         return None
 
-    def getUtilization(self):
-        pass
+    def get_utilization(self):
+        return self.wcet / self.period
 
     def __str__(self):
         return "task {}: (Φ,T,C,D,∆) = ({}, {}, {}, {}, {})".format(self.id, self.offset, self.period, self.wcet,
-                                                                    self.relativeDeadline, self.sections)
+                                                                    self.relative_deadline, self.sections)
 
 
 class Job(object):
-    def __init__(self, task, jobId, releaseTime):
+    def __init__(self, task, job_id, release_time):
         self.task = task
-        self.id = jobId
-        self.releaseTime = releaseTime
-        self.deadline = releaseTime + task.relativeDeadline
-        self.isActive = False
+        self.id = job_id
+        self.release_time = release_time
+        self.deadline = release_time + task.relative_deadline
+        self.is_active = False
+        self.remaining_time = self.task.wcet
 
-        self.remainingTime = self.task.wcet
-
-    def getResourceHeld(self):
+    def get_resource_held(self):
         '''the resources that it's currently holding'''
         pass
 
-    def getRecourseWaiting(self):
+    def get_resource_waiting(self):
         '''a resource that is being waited on, but not currently executing'''
         pass
-        
-    def getRemainingSectionTime(self):
+
+    def get_remaining_section_time(self):
         pass
 
     def execute(self, time):
-        executionTime = min(self.remainingTime, time)
-        self.remainingTime -= executionTime
-        return executionTime
-        
-    def executeToCompletion(self):
-        return self.execute(self.remainingTime)
+        execution_time = min(self.remaining_time, time)
+        self.remaining_time -= execution_time
+        return execution_time
 
-    def isCompleted(self):
-        return self.remainingTime == 0
+    def execute_to_completion(self):
+        return self.execute(self.release_time)
+
+    def is_completed(self):
+        return self.remaining_time == 0
 
     def __str__(self):
-        return "[{0}:{1}] released at {2} -> deadline at {3}".format(self.task.id, self.id, self.releaseTime,
+        return "[{0}:{1}] released at {2} -> deadline at {3}".format(self.task.id, self.id, self.release_time,
                                                                      self.deadline)
+
+
+class RateMonotonic(object):
+    def __init__(self, task_set):
+        self.task_set = task_set
+
+    def get_hyper_period(self):
+        hyper_period = 1
+        for task in self.task_set:
+            hyper_period = hyper_period * int(task.period) // math.gcd(hyper_period, int(task.period))
+        return hyper_period
+
+    def find_executing_job(self):
+        job_id = -1
+        period = self.get_hyper_period()
+
+        for job in self.task_set.jobs:
+            if not job.is_completed():
+                if period > job.task.period:
+                    job_id = job.id
+                    period = job.task.period
+
+        return job_id
 
 
 if __name__ == "__main__":
@@ -225,7 +242,10 @@ if __name__ == "__main__":
     with open(file_path) as json_data:
         data = json.load(json_data)
 
-    taskSet = TaskSet(data)
+    task_set = TaskSet(data)
 
-    taskSet.printTasks()
-    taskSet.printJobs()
+    task_set.print_tasks()
+    task_set.print_jobs()
+
+    rm = RateMonotonic(task_set)
+    print(rm.find_executing_job())
