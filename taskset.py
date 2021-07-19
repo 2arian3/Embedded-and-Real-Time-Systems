@@ -2,6 +2,8 @@ import json
 import sys
 import math
 import copy
+import numpy as np
+import matplotlib.pyplot as plt
 
 
 class TaskSetJsonKeys(object):
@@ -216,13 +218,9 @@ class Job(object):
         temp = self.task.wcet
         for section in self.task.sections:
             temp -= section[1]
-            if temp <= self.remaining_time:
+            if temp < self.remaining_time:
                 return section[0]
         return None
-
-    def get_resource_waiting(self):
-        '''a resource that is being waited on, but not currently executing'''
-        pass
 
     def get_remaining_section_time(self):
         completed = 0
@@ -253,33 +251,119 @@ class RateMonotonic(object):
         self.task_set = task_set
         self.hyper_period = self.task_set.get_hyper_period()
 
-    def find_executing_task(self, task_set, t):
+    def compute_resource_ceiling(self):
+        semaphores = dict()
+        for task_id in sorted(list(self.task_set.tasks.keys())):
+            for resource in self.task_set.tasks[task_id].get_all_resources():
+                if resource not in semaphores:
+                    semaphores[resource] = task_id
+        self.locked_resources = {r: (False, '') for r in list(semaphores.keys())}
+        return semaphores
+
+    def compute_nominal_priorities(self):
+        task_periods = {task.id: task.period for task in list(self.task_set.tasks.values())}
+        periods = sorted(list(task_periods.values()))
+
+        nominal_priorities = {}
+        task_ids = sorted(list(task_periods.keys()))
+        for i in range(1, len(periods)+1):
+            for task_id in task_ids:
+                if task_periods[task_id] == periods[i-1]:
+                    nominal_priorities[task_id] = i
+
+        return nominal_priorities
+
+    def find_executing_task(self, task_set, t, priorities):
+        task_to_be_executed = 1000
         task_id = -1
-        period = self.hyper_period
 
         for job in task_set.jobs:
-            if not job.is_completed():
-                if period > job.task.period and t >= job.release_time:
+            if not job.is_completed() and job.release_time <= t:
+                resource = job.get_resource_held()
+                if priorities[job.task.id] < task_to_be_executed and (resource == 0 or (resource != 0 and \
+                        (not self.locked_resources[resource][0] or self.locked_resources[resource][1] == job.task.id))):
+                    task_to_be_executed = priorities[job.task.id]
                     task_id = job.task.id
-                    period = job.task.period
+
         return task_id
 
     def run(self):
         task_set = copy.deepcopy(self.task_set)
+        priorities = self.compute_nominal_priorities()
+        priorities_copy = copy.deepcopy(priorities)
+        ceilings = self.compute_resource_ceiling()
+
+        gantt_chart_data = {'task': [], 'from': [], 'to': []}
 
         for t in range(self.hyper_period):
-            executing_task = self.find_executing_task(task_set, t)
+            executing_task = self.find_executing_task(task_set, t, priorities)
+
             if executing_task != -1:
+
                 executing_job = task_set.get_task_by_id(executing_task).jobs[0]
+                s = executing_job.get_resource_held()
+
+                if s != 0:
+                    self.locked_resources[s] = (True, executing_task)
+                    priorities[executing_task] = ceilings[s]
+
                 executing_job.execute(1)
 
-                if executing_job.is_completed():
-                    task_set.get_task_by_id(executing_task).jobs.pop(-1)
+                if executing_job.get_resource_held() != s and s != 0:
+                    self.locked_resources[s] = (False, '')
+                    priorities[executing_task] = priorities_copy[executing_task]
 
-                print(f'Executing Task{executing_task} for 1 sec...')
+                if executing_job.is_completed():
+                    task_set.get_task_by_id(executing_task).jobs.pop(0)
+
+                print(f'Executing Task{executing_task} from [{t}, {t+1})')
+
+                gantt_chart_data['task'].append((executing_task, s))
+                gantt_chart_data['from'].append(t)
+                gantt_chart_data['to'].append(t+1)
 
             else:
                 print('CPU IDLE for 1 sec...')
+
+                gantt_chart_data['task'].append(('IDLE', -1))
+                gantt_chart_data['from'].append(t)
+                gantt_chart_data['to'].append(t+1)
+
+        return gantt_chart_data
+
+
+def gantt_chart(data, p):
+    colors = {
+        -1: 'black',
+        0: 'gray',
+        1: 'blue',
+        2: 'red',
+        3: 'green',
+        4: 'pink',
+        5: 'yellow',
+        6: 'orange'
+    }
+    plt.title('Rate Monotonic with HLP')
+    for i in range(len(data['task'])):
+        if 'IDLE' == data['task'][i][0]:
+            plt.hlines('IDLE',
+                       data['from'][i],
+                       data['to'][i],
+                       linewidth=15,
+                       color=colors[int(data['task'][i][1])])
+    priorities = sorted(list(set(p.values())))[::-1]
+    for priority in priorities:
+        for k, v in p.items():
+            if v == priority:
+                for i in range(len(data['task'])):
+                    if k == data['task'][i][0]:
+                        plt.hlines(f'Task{k}',
+                                   data['from'][i],
+                                   data['to'][i],
+                                   linewidth=15,
+                                   color=colors[int(data['task'][i][1])])
+    plt.xticks(np.arange(min(data['from']), max(data['to']) + 1, 1.0))
+    plt.show()
 
 
 if __name__ == "__main__":
@@ -297,4 +381,5 @@ if __name__ == "__main__":
     task_set.print_jobs()
 
     rm = RateMonotonic(task_set)
-    rm.run()
+    gantt_chart_data = rm.run()
+    gantt_chart(gantt_chart_data, rm.compute_nominal_priorities())

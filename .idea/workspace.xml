@@ -1,13 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="77b7026c-a582-4b9d-a641-e375b3bf9b34" name="Default Changelist" comment="" />
+    <list default="true" id="77b7026c-a582-4b9d-a641-e375b3bf9b34" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/taskset.json" beforeDir="false" afterPath="$PROJECT_DIR$/taskset.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/taskset.py" beforeDir="false" afterPath="$PROJECT_DIR$/taskset.py" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
   <component name="ProjectId" id="1v2KdwupXRiXhyeuGKuWXcilkCV" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showExcludedFiles" value="true" />
@@ -15,6 +23,7 @@
   </component>
   <component name="PropertiesComponent">
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
   </component>
@@ -70,6 +79,10 @@
       <option name="presentableId" value="Default" />
       <updated>1625754834402</updated>
       <workItem from="1625754836795" duration="911000" />
+      <workItem from="1626553799530" duration="8098000" />
+      <workItem from="1626646608067" duration="4778000" />
+      <workItem from="1626690123924" duration="14000" />
+      <workItem from="1626707629517" duration="17252000" />
     </task>
     <servers />
   </component>
@@ -77,24 +90,32 @@
     <option name="version" value="1" />
   </component>
   <component name="WindowStateProjectService">
-    <state width="1750" height="285" key="GridCell.Tab.0.bottom" timestamp="1625756681486">
-      <screen x="0" y="25" width="1792" height="1048" />
+    <state width="1750" height="317" key="GridCell.Tab.0.bottom" timestamp="1626737967327">
+      <screen x="0" y="0" width="1792" height="1120" />
     </state>
-    <state width="1750" height="285" key="GridCell.Tab.0.bottom/0.25.1792.1048@0.25.1792.1048" timestamp="1625756681486" />
-    <state width="1750" height="285" key="GridCell.Tab.0.center" timestamp="1625756681486">
-      <screen x="0" y="25" width="1792" height="1048" />
+    <state width="1750" height="317" key="GridCell.Tab.0.bottom/0.0.1792.1120@0.0.1792.1120" timestamp="1626737967327" />
+    <state width="1750" height="285" key="GridCell.Tab.0.bottom/0.25.1792.1048@0.25.1792.1048" timestamp="1626567726059" />
+    <state width="1750" height="317" key="GridCell.Tab.0.center" timestamp="1626737967326">
+      <screen x="0" y="0" width="1792" height="1120" />
     </state>
-    <state width="1750" height="285" key="GridCell.Tab.0.center/0.25.1792.1048@0.25.1792.1048" timestamp="1625756681486" />
-    <state width="1750" height="285" key="GridCell.Tab.0.left" timestamp="1625756681486">
-      <screen x="0" y="25" width="1792" height="1048" />
+    <state width="1750" height="317" key="GridCell.Tab.0.center/0.0.1792.1120@0.0.1792.1120" timestamp="1626737967326" />
+    <state width="1750" height="285" key="GridCell.Tab.0.center/0.25.1792.1048@0.25.1792.1048" timestamp="1626567726058" />
+    <state width="1750" height="317" key="GridCell.Tab.0.left" timestamp="1626737967325">
+      <screen x="0" y="0" width="1792" height="1120" />
     </state>
-    <state width="1750" height="285" key="GridCell.Tab.0.left/0.25.1792.1048@0.25.1792.1048" timestamp="1625756681486" />
-    <state width="1750" height="285" key="GridCell.Tab.0.right" timestamp="1625756681486">
-      <screen x="0" y="25" width="1792" height="1048" />
+    <state width="1750" height="317" key="GridCell.Tab.0.left/0.0.1792.1120@0.0.1792.1120" timestamp="1626737967325" />
+    <state width="1750" height="285" key="GridCell.Tab.0.left/0.25.1792.1048@0.25.1792.1048" timestamp="1626567726058" />
+    <state width="1750" height="317" key="GridCell.Tab.0.right" timestamp="1626737967326">
+      <screen x="0" y="0" width="1792" height="1120" />
     </state>
-    <state width="1750" height="285" key="GridCell.Tab.0.right/0.25.1792.1048@0.25.1792.1048" timestamp="1625756681486" />
+    <state width="1750" height="317" key="GridCell.Tab.0.right/0.0.1792.1120@0.0.1792.1120" timestamp="1626737967326" />
+    <state width="1750" height="285" key="GridCell.Tab.0.right/0.25.1792.1048@0.25.1792.1048" timestamp="1626567726059" />
+    <state x="658" y="195" key="refactoring.ChangeSignatureDialog" timestamp="1626709126394">
+      <screen x="0" y="0" width="1792" height="1120" />
+    </state>
+    <state x="658" y="195" key="refactoring.ChangeSignatureDialog/0.0.1792.1120@0.0.1792.1120" timestamp="1626709126394" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/ERTS_Final_Project$taskset.coverage" NAME="taskset Coverage Results" MODIFIED="1625755139892" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/ERTS_Final_Project$taskset.coverage" NAME="taskset Coverage Results" MODIFIED="1626737948204" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
 </project>
