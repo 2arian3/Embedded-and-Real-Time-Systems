@@ -1,6 +1,7 @@
 import json
 import sys
 import math
+import copy
 
 
 class TaskSetJsonKeys(object):
@@ -85,6 +86,34 @@ class TaskSet(object):
                         t = schedule_end_time  # aperiodic
 
         self.jobs = jobs
+
+    def get_hyper_period(self):
+        hyper_period = 1
+        for task in self.tasks.values():
+            hyper_period = hyper_period * int(task.period) // math.gcd(hyper_period, int(task.period))
+        return hyper_period
+
+    def is_feasible(self):
+        u = [task.get_utilization() for task in self.tasks.values()]
+        if sum(u) <= 1:
+            if sum(u) <= len(self.tasks) * (2 ** len(self.tasks) - 1):
+                return True
+            p = 1
+            for utilization in u:
+                p *= (utilization + 1)
+            if p <= 2:
+                return True
+
+            counter = 0
+            periods = [task.period for task in self.tasks.values()]
+            periods.sort()
+
+            for period in periods:
+                if period % periods[0] == 0:
+                    counter += 1
+
+            return counter == len(periods)
+        return False
 
     def __contains__(self, elt):
         return elt in self.tasks
@@ -184,15 +213,24 @@ class Job(object):
         self.remaining_time = self.task.wcet
 
     def get_resource_held(self):
-        '''the resources that it's currently holding'''
-        pass
+        temp = self.task.wcet
+        for section in self.task.sections:
+            temp -= section[1]
+            if temp <= self.remaining_time:
+                return section[0]
+        return None
 
     def get_resource_waiting(self):
         '''a resource that is being waited on, but not currently executing'''
         pass
 
     def get_remaining_section_time(self):
-        pass
+        completed = 0
+        for section in self.task.sections:
+            completed += section[1]
+            if completed >= self.task.wcet - self.remaining_time:
+                return completed - self.task.wcet + self.remaining_time
+        return 0
 
     def execute(self, time):
         execution_time = min(self.remaining_time, time)
@@ -213,24 +251,35 @@ class Job(object):
 class RateMonotonic(object):
     def __init__(self, task_set):
         self.task_set = task_set
+        self.hyper_period = self.task_set.get_hyper_period()
 
-    def get_hyper_period(self):
-        hyper_period = 1
-        for task in self.task_set:
-            hyper_period = hyper_period * int(task.period) // math.gcd(hyper_period, int(task.period))
-        return hyper_period
+    def find_executing_task(self, task_set, t):
+        task_id = -1
+        period = self.hyper_period
 
-    def find_executing_job(self):
-        job_id = -1
-        period = self.get_hyper_period()
-
-        for job in self.task_set.jobs:
+        for job in task_set.jobs:
             if not job.is_completed():
-                if period > job.task.period:
-                    job_id = job.id
+                if period > job.task.period and t >= job.release_time:
+                    task_id = job.task.id
                     period = job.task.period
+        return task_id
 
-        return job_id
+    def run(self):
+        task_set = copy.deepcopy(self.task_set)
+
+        for t in range(self.hyper_period):
+            executing_task = self.find_executing_task(task_set, t)
+            if executing_task != -1:
+                executing_job = task_set.get_task_by_id(executing_task).jobs[0]
+                executing_job.execute(1)
+
+                if executing_job.is_completed():
+                    task_set.get_task_by_id(executing_task).jobs.pop(-1)
+
+                print(f'Executing Task{executing_task} for 1 sec...')
+
+            else:
+                print('CPU IDLE for 1 sec...')
 
 
 if __name__ == "__main__":
@@ -248,4 +297,4 @@ if __name__ == "__main__":
     task_set.print_jobs()
 
     rm = RateMonotonic(task_set)
-    print(rm.find_executing_job())
+    rm.run()
