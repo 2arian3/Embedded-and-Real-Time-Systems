@@ -380,6 +380,13 @@ if __name__ == "__main__":
     task_set.print_tasks()
     task_set.print_jobs()
 
+    if task_set.is_feasible():
+        print('Good News...\nThe given task set is feasible')
+    else:
+        print('IDK about the feasibility of the given task set :(')
+        print('We\'ll see...')
+
     rm = RateMonotonic(task_set)
+
     gantt_chart_data = rm.run()
     gantt_chart(gantt_chart_data, rm.compute_nominal_priorities())
